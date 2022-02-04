@@ -390,3 +390,87 @@
   ;; :config
   ;; (add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
   )
+
+;; wsl
+(defun wsl-copy (start end)
+  (interactive "r")
+  (shell-command-on-region start end "clip.exe"))
+
+(global-set-key
+ (kbd "M-w")
+ 'wsl-copy)
+
+(use-package 2048-game)
+
+;;
+(use-package  move-text
+  :config
+  (require 'move-text)
+  (move-text-default-bindings))
+;;
+
+;; Persistent scratch
+
+(use-package persistent-scratch
+  :config
+  (persistent-scratch-setup-default)
+  (persistent-scratch-autosave-mode 1))
+
+(use-package origami
+  :bind ("C-c l o" . hydra-origami/body)
+  :config
+  (defhydra hydra-origami (:color red
+                                  :hint nil)
+    "
+_t_: toggle    _o_: open     _r_: redo    _p_: prev        _C_: close all
+_u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
+"
+    ("t" origami-recursively-toggle-node)
+    ("u" origami-undo)
+    ("r" origami-redo)
+    ("p" origami-previous-fold)
+    ("n" origami-next-fold)
+    ("o" origami-open-node)
+    ("c" origami-close-node)
+    ("O" origami-open-all-nodes)
+    ("C" origami-close-all-nodes)
+    ("q" nil "Quit" :color blue))
+
+  (global-origami-mode))
+
+;; lsp-origami provides support for origami.el using language server protocol’s
+;; textDocument/foldingRange functionality.
+;; https://github.com/emacs-lsp/lsp-origami/
+(use-package lsp-origami
+  :hook ((lsp-after-open . lsp-origami-mode)))
+
+(provide 'setup-origami)
+
+
+(use-package golden-ratio
+  :ensure t
+  :diminish golden-ratio-mode
+  :init
+  (golden-ratio-mode 1))
+
+(use-package racket-mode)
+
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0)))))
+
+
+(use-package sicp)
+
+
+;;
+(defun search-selection (beg end)
+  "search for selected text"
+  (interactive "r")
+  (let ((selection (buffer-substring-no-properties beg end)))
+    (deactivate-mark)
+    (isearch-mode t nil nil nil)
+    (isearch-yank-string selection)))
