@@ -474,3 +474,20 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
     (deactivate-mark)
     (isearch-mode t nil nil nil)
     (isearch-yank-string selection)))
+
+(use-package selected
+  :commands selected-minor-mode
+  :bind (:map selected-keymap
+              ("q" . selected-off)
+              ("u" . upcase-region)
+              ("l" . downcase-region)
+              ("w" . count-words-region)
+	      ("m" . mc/mark-next-like-this)
+	      ("n" . search-selection)
+	      (";" . comment-dwim)
+	      ("e" . mc/edit-lines)
+	      ("<DEL>" . delete-region)))
+
+(selected-global-mode 1)
+
+
