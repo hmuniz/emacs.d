@@ -1,1 +1,2 @@
-
+;;; My emacs config
+;;; Code:
