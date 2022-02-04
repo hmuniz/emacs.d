@@ -64,3 +64,111 @@
 			 ("melpa" . "http://localhost:8080/melpa/")))
 
 
+(package-initialize)
+;; (unless package-archive-contents
+;;   (package-refresh-contents))
+
+;; Initialize use-package on non-Linux platforms
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+;;
+
+(use-package auto-package-update
+  :custom
+  (auto-package-update-interval 7)
+  (auto-package-update-prompt-before-update t)
+  (auto-package-update-hide-results t)
+  :config
+  (auto-package-update-maybe)
+  (auto-package-update-at-time "09:00"))
+
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode))
+
+
+(use-package doom-themes
+  :ensure t
+  :config
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (load-theme 'doom-solarized-light   t)
+  
+  (doom-themes-visual-bell-config)
+  (doom-themes-org-config))
+
+;; (use-package dracula-theme
+;;   :config
+;;   (load-theme 'dracula t))
+
+(use-package hl-todo
+  :ensure t
+  :hook (prog-mode . hl-todo-mode)
+  :config
+  (setq hl-todo-highlight-punctuation ":"
+        hl-todo-keyword-faces
+        `(("TODO"       warning bold)
+          ("FIXME"      error bold)
+          ("HACK"       font-lock-constant-face bold)
+          ("REVIEW"     font-lock-keyword-face bold)
+          ("NOTE"       success bold)
+          ("DEPRECATED" font-lock-doc-face bold))))
+
+(defun my-eval-buffer ()
+  (interactive)
+  (eval-buffer)
+  (message "Tudo top!"))
+
+(use-package emacs-lisp-mode
+  :ensure nil
+  :bind (("C-c C-c" . my-eval-buffer)))
+
+
+(use-package yaml-mode
+  :ensure t)
+
+(use-package deadgrep
+  :ensure t)
+
+
+(use-package multiple-cursors
+  :ensure t)
+
+
+(use-package restclient
+  :ensure t
+  :config
+  (add-to-list 'auto-mode-alist '("\\.http\\'" . restclient-mode))
+  :custom
+  (restclient-log-request nil))
+
+
+(use-package ace-window
+  :init
+  (progn
+    (global-set-key [remap other-window] 'ace-window)
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:inherit ace-jump-face-foreground :height 3.0)))))))
+
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status)))
+
+(use-package magit-todos
+  ;; :config
+  ;; (magit-todos-mode)
+  :custom
+  (magit-todos-exclude-globs
+   '(".git/" "submodules/" "test/" "Jenkins/" ".idea/" "*.egg-info/"))
+  (magit-todos-update t)
+  )
+
+
+(use-package hydra
+  :defer t)
