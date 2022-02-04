@@ -220,3 +220,173 @@
   :hook (lsp-mode . lsp-ui-mode)
   :custom
   (lsp-ui-doc-position 'bottom))
+
+(use-package dap-mode
+  ;; Uncomment the config below if you want all UI panes to be hidden by default!
+  :custom
+  (lsp-enable-dap-auto-configure nil)
+  ;; :config
+  :commands dap-debug
+  :config
+  ;; Set up Node debugging
+  ;; Bind `C-c l d` to `dap-hydra` for easy access
+  (dap-ui-mode 1)
+  (general-define-key
+   :keymaps 'lsp-mode-map
+   :prefix lsp-keymap-prefix
+   "d" '(dap-hydra t :wk "debugger"))
+  (defun breackpoint-on-exception ()
+    (interactive)
+    (if dap-exception-breakpoints
+	(setq dap-exception-breakpoints nil)
+      (setq dap-exception-breakpoints '(("python" ("raised" . t)
+					 ("uncaught" . t)))))
+    )
+  :custom
+  (dap-debug-restart-keep-session nil)
+  (dap-utils-vscode-ext-url
+   "http://localhost:8080/_apis/public/gallery/publishers/%s/vsextensions/%s/%s/vspackage")
+  )
+;;
+(use-package yasnippet
+  :config
+  (yas-global-mode 1))
+(use-package yasnippet-snippets)
+;;
+(use-package pyvenv)
+(use-package highlight-indentation)
+;; (use-package lsp-pyright)  ; or lsp-deferred
+;; (use-package lsp-python-ms
+;;   :ensure t
+;;   :init
+;;   (setq lsp-python-ms-executable (executable-find "python-language-server")))
+(use-package sphinx-doc
+  :config
+  (setq sphinx-doc-include-types t))
+(use-package python-mode
+  :ensure t
+  :hook (python-mode . (lambda ()
+                         (require 'lsp-pyright)
+                         (lsp-deferred)))  
+  :custom
+  ;; NOTE: Set these if Python 3 is called "python3" on your system!
+  (python-shell-interpreter "ipython")
+  (python-shell-font-lock-enable nil)
+  (python-shell-interpreter-args
+   "--simple-prompt -i --ipython-dir=/home/henrmun/utils/ipython")
+  (dap-python-debugger 'ptvsd)
+  :config
+  (require 'dap-python)
+  ;; `general-define-key' is comparable to `define-key' when :keymaps is specified
+  (general-define-key
+   :keymaps 'python-mode-map
+   "C-c C-r" 'python-shell-send-region))
+
+(add-hook 'python-mode-hook (lambda ()
+                              (require 'sphinx-doc)
+                              (sphinx-doc-mode t)))
+
+;; (use-package importmagic
+;;     :ensure t
+;;     :config
+;;     (add-hook 'python-mode-hook 'importmagic-mode))
+
+(use-package pyvenv
+  :after python-mode
+  :config
+  (pyvenv-mode 1))
+
+
+(use-package company
+  :after lsp-mode
+  :hook ((lsp-mode . company-mode)
+	 (racket-mode . company-mode)
+	 (inferior-python-mode . company-mode))
+  :bind (:map company-active-map
+              ("<tab>" . company-complete-selection))
+  (:map lsp-mode-map
+        ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0)
+  :config
+
+  (defun company-yasnippet-or-completion ()
+    "Solve company yasnippet conflicts."
+    (interactive)
+    (let ((yas-fallback-behavior
+           (apply 'company-complete-common nil)))
+      (yas-expand)))
+
+  (add-hook 'company-mode-hook
+            (lambda ()
+              (substitute-key-definition
+               'company-complete-common
+               'company-yasnippet-or-completion
+               company-active-map))))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+;;
+
+(defun my-inhibit-global-linum-mode ()
+  "Counter-act `global-linum-mode'."
+  (add-hook 'after-change-major-mode-hook
+            (lambda () (linum-mode 0))
+            :append :local))
+
+(use-package multi-term
+  :ensure t
+
+  :config
+  (setq multi-term-program "/bin/zsh")
+  (add-hook 'term-mode-hook 'my-inhibit-global-linum-mode)
+  (defalias 'mt #'multi-term))
+
+
+(use-package helpful
+  :ensure t
+  :init
+  (global-set-key (kbd "C-h .") #'helpful-at-point)
+  (global-set-key (kbd "C-h f") #'helpful-callable)
+  (global-set-key (kbd "C-h v") #'helpful-variable)
+  (global-set-key (kbd "C-h k") #'helpful-key))
+;;
+
+(use-package smartparens
+  :init
+  (progn
+    (use-package smartparens-config :ensure nil)
+    (use-package smartparens-python :ensure nil)
+    (use-package smartparens-html :ensure nil)
+    (use-package smartparens-racket :ensure nil)
+    (smartparens-global-mode 1)
+    (show-smartparens-global-mode 1)
+    (smartparens-global-strict-mode))
+  :config
+  (progn
+    (setq smartparens-strict-mode t)
+    (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p)))
+  :bind
+  (("C-M-k" . sp-kill-sexp-with-a-twist-of-lime)
+   ("C-M-f" . sp-forward-sexp)
+   ("C-M-b" . sp-backward-sexp)
+   ("C-M-n" . sp-up-sexp)
+   ("C-M-d" . sp-down-sexp)
+   ("C-M-u" . sp-backward-up-sexp)
+   ("C-M-p" . sp-backward-down-sexp)
+   ("C-M-w" . sp-copy-sexp)
+   ("M-s" . sp-splice-sexp)
+   ("M-r" . sp-splice-sexp-killing-around)
+   ("C-0" . sp-forward-slurp-sexp)
+   ("C-}" . sp-forward-barf-sexp)
+   ("C-9" . sp-backward-slurp-sexp)
+   ("C-{" . sp-backward-barf-sexp)
+   ("M-S" . sp-split-sexp)
+   ("M-J" . sp-join-sexp)
+   ("C-M-t" . sp-transpose-sexp)))
+
+(use-package py-autopep8
+  ;; :config
+  ;; (add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
+  )
