@@ -1,8 +1,5 @@
 ;;; My emacs config
 ;;; Code:
-
-;;; My emacs config
-;;; Code:
 (show-paren-mode 1)
 (global-hl-line-mode 1)
 (column-number-mode)
@@ -30,7 +27,7 @@
 
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 
-(global-linum-mode 1)
+(global-linum-mode 0)
 
 (setq dired-listing-switches "-alh")
 
@@ -43,6 +40,8 @@
 
 (setq custom-file (make-temp-file "emacs-custom"))
 
+(setq sml/no-confirm-load-theme t)
+(global-auto-revert-mode t)
 ;;;
 (defun efs/display-startup-time ()
   (message "Emacs loaded in %s with %d garbage collections."
@@ -58,7 +57,7 @@
 ;; Initialize package sources
 (require 'package)
 ;; avoid package-check-package-signature
-(setq package-check-signature t)
+(setq package-check-signature nil)
 ;;
 (setq package-archives '(("gnu" .   "http://localhost:8080/elpa/")
 			 ("melpa" . "http://localhost:8080/melpa/")))
@@ -97,14 +96,13 @@
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
-  (load-theme 'doom-solarized-light   t)
-  
+  (cond
+   ((equal (system-name) "500010336115-U") (load-theme 'doom-laserwave t))
+   ((equal (system-name) "620000010181-nb") (load-theme 'doom-solarized-light t)))
+
   (doom-themes-visual-bell-config)
   (doom-themes-org-config))
 
-;; (use-package dracula-theme
-;;   :config
-;;   (load-theme 'dracula t))
 
 (use-package hl-todo
   :ensure t
@@ -173,9 +171,12 @@
 (use-package hydra
   :defer t)
 
-(use-package flycheck
-  :ensure t
-  :init (global-flycheck-mode))
+;; (use-package flycheck
+;;   :ensure t
+;;   :init (global-flycheck-mode)
+;;   ;; :config
+;;   ;; (setq flycheck-python-flake8-executable "flake8") 
+;;   )
 
 (use-package markdown-mode)
 
@@ -206,11 +207,17 @@
   (setq gc-cons-threshold 100000000)
   (lsp-enable-which-key-integration t)
   (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\workers\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.submodules\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\submodules\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\docs\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\tests\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\test\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\Jenkins\\'")
+  ;; (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\__pycache__\\'")  
   :custom
   (lsp-pyright-typechecking-mode "off")
-  (lsp-enable-snippet nil)
-  (lsp-file-watch-ignored-directories
-   '("[/\\\\]\\.git\\'" "[/\\\\]\\.github\\'" "[/\\\\]\\.circleci\\'" "[/\\\\]\\.hg\\'" "[/\\\\]\\.bzr\\'" "[/\\\\]_darcs\\'" "[/\\\\]\\.svn\\'" "[/\\\\]_FOSSIL_\\'" "[/\\\\]\\.idea\\'" "[/\\\\]\\.ensime_cache\\'" "[/\\\\]\\.eunit\\'" "[/\\\\]node_modules" "[/\\\\]\\.yarn\\'" "[/\\\\]\\.fslckout\\'" "[/\\\\]\\.tox\\'" "[/\\\\]dist\\'" "[/\\\\]dist-newstyle\\'" "[/\\\\]\\.stack-work\\'" "[/\\\\]\\.bloop\\'" "[/\\\\]\\.metals\\'" "[/\\\\]target\\'" "[/\\\\]\\.ccls-cache\\'" "[/\\\\]\\.vscode\\'" "[/\\\\]\\.venv\\'" "[/\\\\]\\.deps\\'" "[/\\\\]build-aux\\'" "[/\\\\]autom4te.cache\\'" "[/\\\\]\\.reference\\'" "[/\\\\]\\.lsp\\'" "[/\\\\]\\.clj-kondo\\'" "[/\\\\]\\.shadow-cljs\\'" "[/\\\\]\\.babel_cache\\'" "[/\\\\]\\.cpcache\\'" "[/\\\\]\\checkouts\\'" "[/\\\\]\\.m2\\'" "[/\\\\]bin/Debug\\'" "[/\\\\]obj\\'" "[/\\\\]_opam\\'" "[/\\\\]_build\\'" "[/\\\\]\\.direnv\\'" "[/\\\\]workers\\'")))
+  (lsp-enable-snippet nil))
 
 (require 'lsp-mode)
 
@@ -221,6 +228,7 @@
   :custom
   (lsp-ui-doc-position 'bottom))
 
+
 (use-package dap-mode
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
   :custom
@@ -228,6 +236,8 @@
   ;; :config
   :commands dap-debug
   :config
+  (eval-when-compile
+    (require 'cl))  
   ;; Set up Node debugging
   ;; Bind `C-c l d` to `dap-hydra` for easy access
   (dap-ui-mode 1)
@@ -255,11 +265,7 @@
 ;;
 (use-package pyvenv)
 (use-package highlight-indentation)
-;; (use-package lsp-pyright)  ; or lsp-deferred
-;; (use-package lsp-python-ms
-;;   :ensure t
-;;   :init
-;;   (setq lsp-python-ms-executable (executable-find "python-language-server")))
+;;
 (use-package sphinx-doc
   :config
   (setq sphinx-doc-include-types t))
@@ -275,12 +281,26 @@
   (python-shell-interpreter-args
    "--simple-prompt -i --ipython-dir=/home/henrmun/utils/ipython")
   (dap-python-debugger 'ptvsd)
+  ;; (dap-python-debugger 'debugpy)
+  
   :config
+  (eval-when-compile
+    (require 'cl))  
   (require 'dap-python)
   ;; `general-define-key' is comparable to `define-key' when :keymaps is specified
   (general-define-key
    :keymaps 'python-mode-map
-   "C-c C-r" 'python-shell-send-region))
+   "C-c C-r" 'python-shell-send-region)
+  (general-define-key
+   :keymaps 'python-mode-map
+   "C-c C-b" 'python-shell-send-buffer)
+  (general-def
+    "M-g s" 'python-shell-switch-to-shell
+    ))
+     
+
+(use-package python-docstring
+  :hook (python-mode . python-docstring-mode))
 
 (add-hook 'python-mode-hook (lambda ()
                               (require 'sphinx-doc)
@@ -386,10 +406,7 @@
    ("M-J" . sp-join-sexp)
    ("C-M-t" . sp-transpose-sexp)))
 
-(use-package py-autopep8
-  ;; :config
-  ;; (add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
-  )
+(use-package py-autopep8)
 
 ;; wsl
 (defun wsl-copy (start end)
@@ -475,6 +492,7 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
     (isearch-mode t nil nil nil)
     (isearch-yank-string selection)))
 
+
 (use-package selected
   :commands selected-minor-mode
   :bind (:map selected-keymap
@@ -489,6 +507,121 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
 	      ("<DEL>" . delete-region)))
 
 (selected-global-mode 1)
+
+(use-package flyspell
+  :init
+  (progn
+    (flyspell-mode 1))
+  :config
+  (progn 
+    (setq ispell-program-name "aspell")
+    (setq ispell-list-command "--list") ;; run flyspell with aspell, not ispell
+    ))
+
+(use-package doom-modeline
+  :ensure t
+  :init (doom-modeline-mode 1))
+
+(use-package json-mode)
+
+
+(use-package pip-requirements)
+
+;;
+
+(use-package polymode
+  :mode ("\.py$" . poly-python-sql-mode)
+  :config
+  (setq polymode-map (kbd "C-c n"))
+  (define-hostmode poly-python-hostmode :mode 'python-mode)
+
+  (define-innermode poly-sql-expr-python-innermode
+    :mode 'sql-mode
+    :head-matcher (rx "r" (= 3 (char "\"'")) (* (any space)))
+    :tail-matcher (rx (= 3 (char "\"'")))
+    :head-mode 'host
+    :tail-mode 'host)
+  (define-polymode poly-python-sql-mode
+    :hostmode 'poly-python-hostmode
+    :innermodes '(poly-sql-expr-python-innermode)
+    (setq polymode-eval-region-function #'poly-python-sql-eval-chunk)
+    (define-key poly-python-sql-mode-map (kbd "C-c C-c") 'polymode-eval-chunk))
+
+  )
+
+
+(use-package pomidor
+  :bind (("<f12>" . pomidor))
+  :config (setq pomidor-sound-tick nil
+                pomidor-sound-tack nil)
+  :hook (pomidor-mode . (lambda ()
+                          (display-line-numbers-mode -1) ; Emacs 26.1+
+                          (setq left-fringe-width 0 right-fringe-width 0)
+                          (setq left-margin-width 2 right-margin-width 0)
+                          ;; force fringe update
+                          (set-window-buffer nil (current-buffer)))))
+
+(use-package ox-reveal
+  :config
+  (setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
+  (setq org-reveal-mathjax t))
+
+(use-package htmlize)
+
+(use-package command-log-mode)
+
+(use-package counsel
+  :after ivy
+  :config (counsel-mode))
+
+(use-package ivy
+  :defer 0.1
+  :diminish
+  :bind (;; ("C-c C-r" . ivy-resume)
+         ("C-x B" . ivy-switch-buffer-other-window))
+  :custom
+  (ivy-count-format "(%d/%d) ")
+  (ivy-use-virtual-buffers t)
+  :config
+  (ivy-mode)
+  (setq ivy-extra-directories ()))
+
+(use-package ivy-prescient
+  :after counsel
+  :config
+  (ivy-prescient-mode 1)
+  (prescient-persist-mode 1))
+
+
+(use-package swiper
+  :after ivy
+  :bind (("C-s" . swiper)
+         ("C-r" . swiper)))
+
+(use-package restart-emacs)
+
+(use-package try)
+
+(use-package crux
+  :bind (("C-c d" . crux-duplicate-current-line-or-region)
+	 ("C-c c d" . crux-duplicate-current-line-or-region)
+	 ("C-c c e" . crux-eval-and-replace)
+	 ("C-c I" . crux-find-user-init-file)
+	 ("C-c c I" . crux-find-user-init-file)
+	 ("C-c j" . crux-top-join-line)
+	 ("C-c c j" . crux-top-join-line)))
+
+
+(use-package focus
+  :config (add-to-list 'focus-mode-to-thing '(python-mode . paragraph)))
+
+(use-package speed-type)
+
+;; (setq url-proxy-services
+;;       '(("http" . "proxyad.itau:8080")
+;; 	("https" . "proxyad.itau:8443")))
+;;
+(setq initial-major-mode 'org-mode)
 
 
 
