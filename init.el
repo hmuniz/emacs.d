@@ -637,7 +637,7 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
 
 (use-package paradox
   :init
-  (setq paradox-github-token "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")
+  (setq paradox-github-token (getenv "GITHUB_TOKEN "))
   (setq paradox-execute-asynchronously t)
   (setq paradox-automatically-star t))
 
