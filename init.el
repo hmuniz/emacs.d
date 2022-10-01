@@ -42,6 +42,8 @@
 
 (setq sml/no-confirm-load-theme t)
 (global-auto-revert-mode t)
+
+(setq warning-minimum-level :emergency)
 ;;;
 (defun efs/display-startup-time ()
   (message "Emacs loaded in %s with %d garbage collections."
@@ -56,11 +58,15 @@
 
 ;; Initialize package sources
 (require 'package)
-;; avoid package-check-package-signature
-(setq package-check-signature nil)
 ;;
-(setq package-archives '(("gnu" .   "http://localhost:8080/elpa/")
-			 ("melpa" . "http://localhost:8080/melpa/")))
+(if (or (equal (system-name) "500010336115-U") (equal (system-name) "620000010181-nb"))
+    (progn 
+     (setq package-archives '(("gnu" .   "http://localhost:8080/elpa/")
+			      ("melpa" . "http://localhost:8080/melpa/")))
+     ;; avoid package-check-package-signature
+     (setq package-check-signature nil))
+
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
 
 
 (package-initialize)
@@ -98,7 +104,8 @@
         doom-themes-enable-italic t)
   (cond
    ((equal (system-name) "500010336115-U") (load-theme 'doom-laserwave t))
-   ((equal (system-name) "620000010181-nb") (load-theme 'doom-solarized-light t)))
+   ((equal (system-name) "620000010181-nb") (load-theme 'doom-solarized-light t))
+   (t (load-theme 'doom-dracula t)))
 
   (doom-themes-visual-bell-config)
   (doom-themes-org-config))
@@ -269,34 +276,34 @@
 (use-package sphinx-doc
   :config
   (setq sphinx-doc-include-types t))
-(use-package python-mode
-  :ensure t
-  :hook (python-mode . (lambda ()
-                         (require 'lsp-pyright)
-                         (lsp-deferred)))  
-  :custom
-  ;; NOTE: Set these if Python 3 is called "python3" on your system!
-  (python-shell-interpreter "ipython")
-  (python-shell-font-lock-enable nil)
-  (python-shell-interpreter-args
-   "--simple-prompt -i --ipython-dir=/home/henrmun/utils/ipython")
-  (dap-python-debugger 'ptvsd)
-  ;; (dap-python-debugger 'debugpy)
+;; (use-package python-mode
+;;   :ensure t
+;;   :hook (python-mode . (lambda ()
+;;                          (require 'lsp-pyright)
+;;                          (lsp-deferred)))  
+;;   :custom
+;;   ;; NOTE: Set these if Python 3 is called "python3" on your system!
+;;   (python-shell-interpreter "ipython")
+;;   (python-shell-font-lock-enable nil)
+;;   (python-shell-interpreter-args
+;;    "--simple-prompt -i --ipython-dir=/home/henrmun/utils/ipython")
+;;   (dap-python-debugger 'ptvsd)
+;;   ;; (dap-python-debugger 'debugpy)
   
-  :config
-  (eval-when-compile
-    (require 'cl))  
-  (require 'dap-python)
-  ;; `general-define-key' is comparable to `define-key' when :keymaps is specified
-  (general-define-key
-   :keymaps 'python-mode-map
-   "C-c C-r" 'python-shell-send-region)
-  (general-define-key
-   :keymaps 'python-mode-map
-   "C-c C-b" 'python-shell-send-buffer)
-  (general-def
-    "M-g s" 'python-shell-switch-to-shell
-    ))
+;;   :config
+;;   (eval-when-compile
+;;     (require 'cl))  
+;;   (require 'dap-python)
+;;   ;; `general-define-key' is comparable to `define-key' when :keymaps is specified
+;;   (general-define-key
+;;    :keymaps 'python-mode-map
+;;    "C-c C-r" 'python-shell-send-region)
+;;   (general-define-key
+;;    :keymaps 'python-mode-map
+;;    "C-c C-b" 'python-shell-send-buffer)
+;;   (general-def
+;;     "M-g s" 'python-shell-switch-to-shell
+;;     ))
      
 
 (use-package python-docstring
@@ -321,6 +328,7 @@
   :after lsp-mode
   :hook ((lsp-mode . company-mode)
 	 (racket-mode . company-mode)
+	 (racket-repl-mode . company-mode)
 	 (inferior-python-mode . company-mode))
   :bind (:map company-active-map
               ("<tab>" . company-complete-selection))
@@ -399,6 +407,7 @@
    ("M-s" . sp-splice-sexp)
    ("M-r" . sp-splice-sexp-killing-around)
    ("C-0" . sp-forward-slurp-sexp)
+   ("M-)" . sp-forward-slurp-sexp)
    ("C-}" . sp-forward-barf-sexp)
    ("C-9" . sp-backward-slurp-sexp)
    ("C-{" . sp-backward-barf-sexp)
@@ -413,9 +422,13 @@
   (interactive "r")
   (shell-command-on-region start end "clip.exe"))
 
-(global-set-key
- (kbd "M-w")
- 'wsl-copy)
+(when (and (string-match "-[Mm]icrosoft" operating-system-release)
+	   (not (display-graphic-p)))
+  ;; WSL: WSL1 has "-Microsoft", WSL2 has "-microsoft-standard"
+  (global-set-key
+   (kbd "M-w")
+   'wsl-copy))
+
 
 (use-package 2048-game)
 
@@ -621,13 +634,18 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
 ;;       '(("http" . "proxyad.itau:8080")
 ;; 	("https" . "proxyad.itau:8443")))
 ;;
+
+(if (f-exists-p (expand-file-name "~/quicklisp/slime-helper.el"))
+    (load (expand-file-name "~/quicklisp/slime-helper.el"))
+  ;; Replace "sbcl" with the path to your implementation
+  (setq inferior-lisp-program "sbcl")
+  (setq initial-major-mode 'org-mode)
+  )
+
+(use-package rainbow-delimiters
+  :hook
+  ((racket-mode . rainbow-delimiters-mode)
+   (racket-repl-mode . rainbow-delimiters-mode)))
+
 (setq initial-major-mode 'org-mode)
-
-
-
-
-
-
-
-
 
