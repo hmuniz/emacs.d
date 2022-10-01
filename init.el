@@ -221,7 +221,7 @@
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\tests\\'")
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\test\\'")
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\Jenkins\\'")
-  ;; (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\__pycache__\\'")  
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\__pycache__\\'")
   :custom
   (lsp-pyright-typechecking-mode "off")
   (lsp-enable-snippet nil))
@@ -415,7 +415,9 @@
    ("M-J" . sp-join-sexp)
    ("C-M-t" . sp-transpose-sexp)))
 
-(use-package py-autopep8)
+(use-package py-autopep8
+  :config
+  (setq py-autopep8-options '("--max-line-length=120")))
 
 ;; wsl
 (defun wsl-copy (start end)
@@ -542,25 +544,25 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
 
 ;;
 
-(use-package polymode
-  :mode ("\.py$" . poly-python-sql-mode)
-  :config
-  (setq polymode-map (kbd "C-c n"))
-  (define-hostmode poly-python-hostmode :mode 'python-mode)
+;; (use-package polymode
+;;   :mode ("\.py$" . poly-python-sql-mode)
+;;   :config
+;;   (setq polymode-map (kbd "C-c n"))
+;;   (define-hostmode poly-python-hostmode :mode 'python-mode)
 
-  (define-innermode poly-sql-expr-python-innermode
-    :mode 'sql-mode
-    :head-matcher (rx "r" (= 3 (char "\"'")) (* (any space)))
-    :tail-matcher (rx (= 3 (char "\"'")))
-    :head-mode 'host
-    :tail-mode 'host)
-  (define-polymode poly-python-sql-mode
-    :hostmode 'poly-python-hostmode
-    :innermodes '(poly-sql-expr-python-innermode)
-    (setq polymode-eval-region-function #'poly-python-sql-eval-chunk)
-    (define-key poly-python-sql-mode-map (kbd "C-c C-c") 'polymode-eval-chunk))
+;;   (define-innermode poly-sql-expr-python-innermode
+;;     :mode 'sql-mode
+;;     :head-matcher (rx "r" (= 3 (char "\"'")) (* (any space)))
+;;     :tail-matcher (rx (= 3 (char "\"'")))
+;;     :head-mode 'host
+;;     :tail-mode 'host)
+;;   (define-polymode poly-python-sql-mode
+;;     :hostmode 'poly-python-hostmode
+;;     :innermodes '(poly-sql-expr-python-innermode)
+;;     (setq polymode-eval-region-function #'poly-python-sql-eval-chunk)
+;;     (define-key poly-python-sql-mode-map (kbd "C-c C-c") 'polymode-eval-chunk))
 
-  )
+;;   )
 
 
 (use-package pomidor
@@ -630,22 +632,49 @@ _u_: undo      _c_: close    _n_: next    _O_: open all    _q_: quit
 
 (use-package speed-type)
 
+
+(use-package org-pomodoro)
+
+(use-package paradox
+  :init
+  (setq paradox-github-token "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")
+  (setq paradox-execute-asynchronously t)
+  (setq paradox-automatically-star t))
+
+(use-package git-link
+  :config
+  (add-to-list 'git-link-remote-alist
+	       '("gitcorp.prod.aws.cloud.ihf" git-link-github)))
+
+(use-package format-all)
+
 ;; (setq url-proxy-services
 ;;       '(("http" . "proxyad.itau:8080")
 ;; 	("https" . "proxyad.itau:8443")))
 ;;
 
+
 (if (f-exists-p (expand-file-name "~/quicklisp/slime-helper.el"))
     (load (expand-file-name "~/quicklisp/slime-helper.el"))
   ;; Replace "sbcl" with the path to your implementation
   (setq inferior-lisp-program "sbcl")
-  (setq initial-major-mode 'org-mode)
-  )
+  (setq initial-major-mode 'org-mode))
 
 (use-package rainbow-delimiters
   :hook
   ((racket-mode . rainbow-delimiters-mode)
    (racket-repl-mode . rainbow-delimiters-mode)))
 
-(setq initial-major-mode 'org-mode)
+(use-package  org-mode
+  :ensure nil
+  :config
+  (setq org-todo-keywords
+	'((sequence "TODO" "WIP" "DONE"))))
 
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+
+
+(setq initial-major-mode 'org-mode)
